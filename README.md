@@ -1,1 +1,2 @@
 # Solar_eclipse
+# SolarEclipse
