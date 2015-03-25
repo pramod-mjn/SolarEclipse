@@ -60,9 +60,9 @@ public:
 		if(diffxy == 0)
 			return i1;
 		Vec3 res;
-		res.x = i1.x + (i2.x - i1.x)/diffxy*1.0f;
-		res.y = i1.y + (i2.y - i1.y)/diffxy*1.0f;
-		res.z = i1.z + (i2.z - i1.z)/diffxy*1.0f;
+		res.x = i1.x + (i2.x - i1.x)*(xy - xy1)/diffxy*1.0f;
+		res.y = i1.y + (i2.y - i1.y)*(xy - xy1)/diffxy*1.0f;
+		res.z = i1.z + (i2.z - i1.z)*(xy - xy1)/diffxy*1.0f;
 		return res;
 	}
 	ColorRGB GetColor(Vec3 a, ColorRGB col)

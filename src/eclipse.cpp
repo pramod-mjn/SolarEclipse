@@ -105,7 +105,7 @@ int main()
         rotation = Transform::RotateZ(camera.gamma) * Transform::RotateX(camera.theta) * Transform::RotateY(camera.phi);
         //earthRotation = Transform::RotateY(earthAngle, earthCenter);
         view_sunCenter = Vec4(sunCenter, 1);
-        view_earthCenter = earthRotation * Vec4(earthCenter, 1);
+        view_earthCenter = Vec4(earthCenter, 1);
 
         for(int i=0; i<triangle.size(); i++)
         {
