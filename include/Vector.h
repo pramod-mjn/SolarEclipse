@@ -3,7 +3,6 @@
 #include <iostream>
 #include <cmath>
 
-
 //------------------- A 2D point struct ---------------------------
 
 
@@ -33,6 +32,11 @@ public:
 	};
 	Vec2(float a, float b) : x(a), y(b) {}
 	Vec2() {}
+	static void swapp(Vec2& a, Vec2& b)
+	{
+		std::swap(a.x, b.x);
+		std::swap(a.y, b.y);		
+	}
 };
 
 //------------------- A 3D vector class ---------------------------
@@ -200,6 +204,18 @@ public:
 		}
 		return (&x)[i];
 	}
+	bool operator == (const Vec4 & other)
+	{
+		if(x == other.x && y == other.y && z == other.z && w == other.w)
+			return true;
+		return false;
+		// if(abs(x - other.x) < 0)
+		// if(abs(y - other.y) < 0)
+		// if(abs(z - other.z) < 0)
+		// if(abs(w - other.w) < 0)
+		// 	return true;
+		// return false;
+	}
 
 	inline float Length(void) const
 	{
@@ -246,6 +262,19 @@ public:
 	{
 		return Point2D(a.x, a.y);
 	}
+	static Vec3 SurNorm(Vec4 a, Vec4 b, Vec4 c)
+	{
+		Vec4 ab = b - a;
+		Vec4 ac = c - a;
+		return Vec4::Cross(ac, ab);
+	}
+	static void swapp(Vec4& a, Vec4& b)
+	{
+		std::swap(a.x, b.x);
+		std::swap(a.y, b.y);
+		std::swap(a.z, b.z);
+		std::swap(a.w, b.w);		
+	}
 	
 
 private:
@@ -262,3 +291,26 @@ inline std::ostream& operator << (std::ostream &os, const Vec4 &v4)
 	os << v4.x << " " << v4.y << " " << v4.z << " " << v4.w;
 	return os;
 }
+
+
+struct Vertex{
+	Vec4 position;
+	Vec2 uvc;
+	Vec3 normal;
+	int count;
+	Vertex(){}
+	Vertex(Vec4 a, Vec2 b, int c=0): position(a), uvc(b), count(c)
+	{
+		normal = Vec3(0,0,0);
+	}
+	Vertex(Vec4 a, Vec2 b, Vec3 n, int c=0): position(a), uvc(b), normal(n), count(c)
+	{}
+};
+struct Surface{
+	Vec4 v1, v2, v3, v4;
+	Vec3 normal;
+	Surface() {}
+	Surface(Vec4 a, Vec4 b, Vec4 c, Vec4 d, Vec3 n): v1(a), v2(b), v3(c), v4(d), normal(n)
+	{}
+};
+;
