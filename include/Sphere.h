@@ -119,11 +119,7 @@ public:
 	}
 	void Map(SDL_Renderer *renderer, Camera& cam, Texture &texObj, float *zBuffer)
 	{
-		extern std::vector<Vertex> moonVertex;
-		for(int i=0; i<30; i++)
-		{
-			std::cout<<vertices[i].position<<"     "<< moonVertex[i].position<<"\n";
-		}
+		
 		for(int i=0;i<=phi_steps;i++)
 		{
 			for(int j=0;j<theta_steps;j++)	

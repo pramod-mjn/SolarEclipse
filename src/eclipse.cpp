@@ -13,12 +13,13 @@
 
 using namespace std;
 
-const int SCREEN_WIDTH = 1024;
+const int SCREEN_WIDTH = 1366;
 const int SCREEN_HEIGHT = 768;
 const float def_Buffer = 100000;
 Light light(1,1,1,1,1,1);
 
 std::vector<Vertex> moonVertex;
+std::vector<Vertex> earthVertex;
 
 
 int main()
@@ -29,13 +30,16 @@ int main()
     texEarth.LoadFile("earthTexture.bmp");
     texMoon.LoadFile("moonTexture.bmp");
     
-    Vec3 earthCenter = Vec3(0,0,500);
+    Vec3 earthCenter = Vec3(0,0,400);
     float earthRadius = 175;
-    Sphere earth(earthCenter, earthRadius, 25);
+    Sphere earth(earthCenter, earthRadius, 50);
     Vec4 view_earthCenter;
     float earthAngle = 0;
+    earthVertex.resize(earth.vertices.size());
+    earthVertex[0].phi_count = earth.vertices[0].phi_count;
+    earthVertex[0].theta_count = earth.vertices[0].theta_count;
 
-    Vec3 moonCenter = Vec3(450,0,500);
+    Vec3 moonCenter = Vec3(450,0,400);
     float moonRadius = 50;
     Sphere moon(moonCenter, moonRadius, 10);
     float moonAngle = 0;
@@ -78,9 +82,11 @@ int main()
 
        
     while(!quit)
-    {        
-        rotation = Transform::RotateZ(camera.gamma) * Transform::RotateX(camera.theta) * Transform::RotateY(camera.phi);
-        view_earthCenter = Vec4(earthCenter, 1);
+    {   
+        view_earthCenter = Vec4(earthCenter, 1);     
+        rotation = Transform::RotateZ(camera.gamma, view_earthCenter) * Transform::RotateX(camera.theta)
+         * Transform::RotateY(camera.phi, view_earthCenter);
+        
 
         // Changing light earth and moon position into viewing coordinate
         Vec4 lightDir = Vec4(light.direction, 0);
@@ -93,7 +99,7 @@ int main()
             Vec4 nearth = Vec4(earth.vertices[i].normal, 0);
             v = rotation * v;
             nearth = rotation * nearth;
-            earth.vertices[i].position = v;
+            earthVertex[i].position = earth.vertices[i].position = v;
             earth.vertices[i].normal = Vec3(nearth.x, nearth.y, nearth.z);
         }
         for(int i=0; i<moon.vertices.size(); i++)
@@ -119,7 +125,7 @@ int main()
             Vec4 nearth = Vec4(earth.vertices[i].normal, 0);
             v = Transform::RotateY(earthAngle, view_earthCenter) * v;
             nearth = Transform::RotateY(earthAngle, view_earthCenter) * nearth;
-            earth.vertices[i].position = v;
+            earthVertex[i].position = earth.vertices[i].position = v;
             earth.vertices[i].normal = Vec3(nearth.x, nearth.y, nearth.z);
         }
         //Revolution of moon
@@ -127,8 +133,8 @@ int main()
         {
             Vec4 v = moon.vertices[i].position;
             Vec4 nmoon = Vec4(moon.vertices[i].normal,0);
-            v = Transform::RotateZ(moonAngle, view_earthCenter) * v;
-            nmoon = Transform::RotateZ(moonAngle, view_earthCenter) * nmoon;
+            v = Transform::RotateY(moonAngle, view_earthCenter) * v;
+            nmoon = Transform::RotateY(moonAngle, view_earthCenter) * nmoon;
             moonVertex[i].position = moon.vertices[i].position = v;
             moon.vertices[i].normal = Vec3(nmoon.x, nmoon.y, nmoon.z);
         }
@@ -136,6 +142,9 @@ int main()
         lightAngle =0;
         earthAngle = 0;
         moonAngle = 0;
+        camera.phi = 0;
+        camera.theta = 0;
+        camera.gamma = 0;
         SDL_WaitEvent(&event);
 
         switch (event.type)
@@ -152,10 +161,10 @@ int main()
             if (event.key.keysym.sym == SDLK_e) camera.theta =-0.1;
             if (event.key.keysym.sym == SDLK_v) camera.gamma =0.1;
             if (event.key.keysym.sym == SDLK_b) camera.gamma =-0.1;
-            if (event.key.keysym.sym == SDLK_m) { earthAngle = 0.01; moonAngle = 0.01; }
-            if (event.key.keysym.sym == SDLK_n) { earthAngle = -0.01; moonAngle = -0.01; }
-            if (event.key.keysym.sym == SDLK_j) lightAngle = 0.01;
-            if (event.key.keysym.sym == SDLK_k) lightAngle = -0.01;
+            if (event.key.keysym.sym == SDLK_m) { earthAngle = 0.05; moonAngle = 0.05; }
+            if (event.key.keysym.sym == SDLK_n) { earthAngle = -0.05; moonAngle = -0.05; }
+            if (event.key.keysym.sym == SDLK_j) lightAngle = 0.05;
+            if (event.key.keysym.sym == SDLK_k) lightAngle = -0.05;
             
             if (event.key.keysym.sym == SDLK_z) {
                 camera.zprp += 5;

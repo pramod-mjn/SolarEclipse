@@ -21,7 +21,7 @@ struct Light {
 	Light(float x, float y, float z, float r, float g, float b)
 	{
 		//position = Vec3(x,y,z);
-        direction = Vec3(-1,0,0);    
+        direction = Vec3(-1,0,-0.1);    
 		light_intensity = Vec3(r,g,b);
 	}
 	

@@ -36,114 +36,6 @@ void Rasterize::DrawTriangle(const Vec4& p1, const Vec4& p2, const Vec4& p3, Col
 
 }
 
-Vec3 Rasterize::SurNormal(Vec4 a, Vec4 b, Vec4 c)
-{
-	Vec4 ab = b - a;
-	Vec4 bc = c - b;
-	return Vec4::Cross(ab, bc);
-}
-
-
-float Rasterize::IntersectX(int y, Vec3 a, Vec3 b)
-{
-  	return (a.x*1.0f + (b.x - a.x)*(y - a.y)/(b.y - a.y)*1.0f);
-}
-void Rasterize::SortY(Vec3& a, Vec3& b, Vec3& c)
-{
-  	if(a.y > b.y){
-  		Vec3::swapp(a, b);
-     
-    }
-  	if(b.y > c.y)
-  		Vec3::swapp(b, c);
-  	if(a.y > b.y)
-  		Vec3::swapp(a, b);
-}
-void Rasterize::SortY(Vec3& a, Vec3& b, Vec3& c, Vec2& uv1, Vec2& uv2, Vec2& uv3)
-{
-  if(a.y > b.y){
-    Vec3::swapp(a, b);
-    std::swap(uv1.x, uv2.x);
-    std::swap(uv1.y, uv2.y);
-  }
-  if(b.y > c.y){
-    Vec3::swapp(b, c);
-    std::swap(uv2.x, uv3.x);
-    std::swap(uv2.y, uv3.y);
-  }
-  if(a.y > b.y){
-    Vec3::swapp(a, b);
-    std::swap(uv1.x, uv2.x);
-    std::swap(uv1.y, uv2.y);
-  }
-}
-
-void Rasterize::Horizon(float y, float preX, float postX, float *zBuffer)
-{
-  if(preX>postX)
-    std::swap(preX, postX);
-  for(int x=preX; x<=postX; x++)
-  {
-    float dz = cam.zprp - cam.zview;
-    float z = ((consA*x + consB*y)*cam.zprp + consD*dz)/(consA*x + consB*y - consC*dz);
-
-    if (z < zBuffer[int(x+WIDTH/2) + int(y+HEIGHT/2)*WIDTH])
-    {
-      zBuffer[int(x+WIDTH/2) + int(y+HEIGHT/2)*WIDTH] = z;
-      setPixel(m_renderer, x , y, m_color);
-    }
-  }
-} 
-
-void Rasterize::FillTriangle(Vec4 p1, Vec4 p2, Vec4 p3, ColorRGB color, float *zBuffer)
-{
-	m_p[0]=p1;
-	m_p[1]=p2;
-	m_p[2]=p3;
-	m_color = color;
-
-  Vec3 norm = SurNormal(m_p[0], m_p[1], m_p[2]); 
-	consA = norm.x;
-	consB = norm.y;
-	consC = norm.z;
-	consD = -(consA * m_p[0].x + consB * m_p[0].y + consC * m_p[0].z);
-
-	//Projection
-  Vec3 p_cen = Projection(Vec4(0,0,0,0));
-	for(int i=0; i<3; i++)
-	{
-		p_p[i] = Projection(m_p[i]);
-    p_p[i].y = int(p_p[i].y);
-	}
-	
-	  // Compute triangle bounding box
-	  SortY(p_p[0], p_p[1], p_p[2]);
-    float minY = p_p[0].y; //Min3(p_p[0].y, p_p[1].y, p_p[2].y);
-    //int maxX = Max3(p_p[0].x, p_p[1].x, p_p[2].x);
-    float maxY = p_p[2].y; //Max3(p_p[0].y, p_p[1].y, p_p[2].y);
-    float midY = p_p[1].y;
-
-    float Xstart, Xend;
-    Vec3 left = SurNormal(p_p[1], p_p[2], p_p[0]);
-    left.NormalizeToUnit();
-    Vec3 p;
-        
-    p.y = minY;  
-    for (p.y = minY; p.y < maxY; p.y++) 
-    {     
-    	if(p.y < midY)
-    	{
-    		Xstart = IntersectX(p.y, p_p[0], p_p[1]);
-    		Xend = IntersectX(p.y, p_p[0], p_p[2]); 
-    	}
-    	else
-    	{
-        Xstart = IntersectX(p.y, p_p[1], p_p[2]);
-    		Xend = IntersectX(p.y, p_p[0], p_p[2]); 	
-    	}
-        Horizon(p.y, Xstart, Xend, zBuffer);
-    }
-}
 
 void Rasterize::FillTriangle(Vertex p1, Vertex p2, Vertex p3,
        Texture &texObj, float *zBuffer)
@@ -155,6 +47,7 @@ void Rasterize::FillTriangle(Vertex p1, Vertex p2, Vertex p3,
   t_v[1] = m_v2 = p2;
   t_v[2] = m_v3 = p3;
   float u; bool check = false; 
+
   for(int i=0;i<3;i++)
   {
     if(check)
@@ -163,10 +56,12 @@ void Rasterize::FillTriangle(Vertex p1, Vertex p2, Vertex p3,
     {
 
       if(check)
+        {
           break;
+        }
       for(int k=0; k<(moonVertex[0].theta_count-1);k++)
       {
-        int a, b, c;
+        int a, b, c,d;
         float A,B,C,D;
         if(check)
         {
@@ -178,14 +73,21 @@ void Rasterize::FillTriangle(Vertex p1, Vertex p2, Vertex p3,
         a = k*moonVertex[0].phi_count + j;
         b = k*moonVertex[0].phi_count + j+1;
         c = (k+1)*moonVertex[0].phi_count + j;
+        d = (k+1)*moonVertex[0].phi_count + j+1;
         Vec3 norm =Vec4::SurNorm(moonVertex[a].position, moonVertex[b].position, moonVertex[c].position);
+
         A = norm.x;
         B= norm.y;
         C= norm.z;
         D = -(A * moonVertex[a].position.x + B * moonVertex[a].position.y + C * moonVertex[a].position.z);
+        //if(A == 0 && B == 1 && C == 0)
+        if(k == 0 )
+          continue;
 
         float u = - ( A*t_v[i].position.x + B*t_v[i].position.y + C*t_v[i].position.z + D)/(A*light.direction.x 
                     + B*light.direction.y + C*light.direction.z);
+        if(u<0)
+          continue;
 
         Vec4 temp  = Vec4(t_v[i].position.x + u*light.direction.x, t_v[i].position.y + u*light.direction.y,
                      t_v[i].position.z + u*light.direction.z, 1);
@@ -193,21 +95,31 @@ void Rasterize::FillTriangle(Vertex p1, Vertex p2, Vertex p3,
         Vec3 n1 = Vec4::Cross(moonVertex[a].position - temp, moonVertex[b].position - temp);
         Vec3 n2 = Vec4::Cross(moonVertex[b].position - temp, moonVertex[c].position -temp);
         Vec3 n3 = Vec4::Cross(moonVertex[c].position - temp, moonVertex[a].position - temp);
+        Vec3 n4 = Vec4::Cross(moonVertex[c].position - temp, moonVertex[d].position - temp);
+        Vec3 n5 = Vec4::Cross(moonVertex[d].position - temp, moonVertex[b].position - temp);
         n1.NormalizeToUnit();
         n2.NormalizeToUnit();
         n3.NormalizeToUnit();
+        n4.NormalizeToUnit();
+        n5.NormalizeToUnit();
 
         int d1 =Vec3::Dot(n1, norm);
         int d2 =Vec3::Dot(n2, norm);
         int d3 =Vec3::Dot(n3, norm);
+        int d4 = Vec3::Dot(n4, norm);
+        int d5 = Vec3::Dot(n5, norm);
   
         if ((d1>=0 && d2>=0 && d3>=0) || (d1<=0 && d2<=0 && d3<=0))
-          continue;
+          check = true;
+        if ((d2>=0 && d4>=0 && d5>=0) || (d2<=0 && d4<=0 && d5<=0))
+          check = true;
         //else
           //std::cout<<"False";
       }
     }
   }
+
+
 
   //calculating intensity at the vertices
   if(!check)
@@ -217,7 +129,7 @@ void Rasterize::FillTriangle(Vertex p1, Vertex p2, Vertex p3,
     m_v3.color = light.CalculateLightIntensity(m_v3, cam);
   }
   
-  Vec3 norm = SurNormal(m_v1.position, m_v2.position, m_v3.position); 
+  Vec3 norm = Vec4::SurNorm(m_v1.position, m_v2.position, m_v3.position); 
   consA = norm.x;
   consB = norm.y;
   consC = norm.z;
@@ -255,7 +167,7 @@ void Rasterize::FillTriangle(Vertex p1, Vertex p2, Vertex p3,
       if(p.y < midY)
       {
         Xstart = Uinterpolation(p.y, m_v1.position.y, m_v2.position.y, m_v1.position.x, m_v2.position.x);
-        Xend = Uinterpolation(p.y, m_v1.position.y, m_v3.position.y, m_v1.position.x, m_v3.position.x);//IntersectX(p.y, p_p[0], p_p[2]);
+        Xend = Uinterpolation(p.y, m_v1.position.y, m_v3.position.y, m_v1.position.x, m_v3.position.x);
         ustart = Uinterpolation(Xstart, m_v1.position.x, m_v2.position.x, m_v1.uvc.x, m_v2.uvc.x);
         uend = Uinterpolation(Xend, m_v1.position.x, m_v3.position.x, m_v1.uvc.x, m_v3.uvc.x); 
         Istart = Iinterpolation(p.y, m_v1.position.y, m_v2.position.y, int1, int2);
@@ -265,7 +177,7 @@ void Rasterize::FillTriangle(Vertex p1, Vertex p2, Vertex p3,
       else
       {
         Xstart = Uinterpolation(p.y, m_v2.position.y, m_v3.position.y, m_v2.position.x, m_v3.position.x);
-        Xend = Uinterpolation(p.y, m_v1.position.y, m_v3.position.y, m_v1.position.x, m_v3.position.x);//IntersectX(p.y, p_p[0], p_p[2]);
+        Xend = Uinterpolation(p.y, m_v1.position.y, m_v3.position.y, m_v1.position.x, m_v3.position.x);
         ustart = Uinterpolation(Xstart, m_v2.position.x, m_v3.position.x, m_v2.uvc.x, m_v3.uvc.x);
         uend = Uinterpolation(Xend, m_v1.position.x, m_v3.position.x, m_v1.uvc.x, m_v3.uvc.x); 
         Istart = Iinterpolation(p.y, m_v2.position.y, m_v3.position.y, int2, int3);
@@ -287,9 +199,9 @@ void Rasterize::FillTriangle(Vertex p1, Vertex p2, Vertex p3,
         m_color = texObj.Sample(u2sam, v2sam);
         ColorRGB cur_color = GetColor(cur_int, m_color);
         
-        if (z < zBuffer[int(p.x+WIDTH/2) + int(p.y+HEIGHT/2)*WIDTH])
+        if (z < zBuffer[int(p.x+SCREEN_WIDTH/2) + int(p.y+SCREEN_HEIGHT/2)*SCREEN_WIDTH])
         {
-          zBuffer[int(p.x+WIDTH/2) + int(p.y+HEIGHT/2)*WIDTH] = z;
+          zBuffer[int(p.x+SCREEN_WIDTH/2) + int(p.y+SCREEN_HEIGHT/2)*SCREEN_WIDTH] = z;
           setPixel(m_renderer, p.x , p.y, cur_color);
         }
       }
@@ -299,18 +211,96 @@ void Rasterize::FillTriangle(Vertex p1, Vertex p2, Vertex p3,
 
 void Rasterize::FillTriangle(Vertex p1, Vertex p2, Vertex p3,
        Texture &texObj, float *zBuffer, int moon)
-{
+{Vertex t_v[3];
   extern Light light;
-  Vertex t_v1 = m_v1 = p1;
-  Vertex t_v2 = m_v2 = p2;
-  Vertex t_v3 = m_v3 = p3;
+  extern std::vector<Vertex> earthVertex;
+  t_v[0] = m_v1 = p1;
+  t_v[1] = m_v2 = p2;
+  t_v[2] = m_v3 = p3;
+  float u; bool check = false; 
+
+  for(int i=0;i<3;i++)
+  {
+    if(check)
+      break;
+    for(int j=0;j<(earthVertex[0].phi_count-1);j++)
+    {
+
+      if(check)
+        {
+          break;
+        }
+      for(int k=0; k<(earthVertex[0].theta_count-1);k++)
+      {
+        int a, b, c,d;
+        float A,B,C,D;
+        if(check)
+        {
+          m_v1.color = light.CalculateShadowIntensity(m_v1, cam);
+          m_v2.color = light.CalculateShadowIntensity(m_v2, cam);
+          m_v3.color = light.CalculateShadowIntensity(m_v3, cam);
+          break;
+        }
+        a = k*earthVertex[0].phi_count + j;
+        b = k*earthVertex[0].phi_count + j+1;
+        c = (k+1)*earthVertex[0].phi_count + j;
+        d = (k+1)*earthVertex[0].phi_count + j+1;
+        Vec3 norm =Vec4::SurNorm(earthVertex[a].position, earthVertex[b].position, earthVertex[c].position);
+
+        A = norm.x;
+        B= norm.y;
+        C= norm.z;
+        D = -(A * earthVertex[a].position.x + B * earthVertex[a].position.y + C * earthVertex[a].position.z);
+        //if(A == 0 && B == 1 && C == 0)
+        if(k == 0 )
+          continue;
+
+        float u = - ( A*t_v[i].position.x + B*t_v[i].position.y + C*t_v[i].position.z + D)/(A*light.direction.x 
+                    + B*light.direction.y + C*light.direction.z);
+        if(u<0)
+          continue;
+
+        Vec4 temp  = Vec4(t_v[i].position.x + u*light.direction.x, t_v[i].position.y + u*light.direction.y,
+                     t_v[i].position.z + u*light.direction.z, 1);
+
+        Vec3 n1 = Vec4::Cross(earthVertex[a].position - temp, earthVertex[b].position - temp);
+        Vec3 n2 = Vec4::Cross(earthVertex[b].position - temp, earthVertex[c].position -temp);
+        Vec3 n3 = Vec4::Cross(earthVertex[c].position - temp, earthVertex[a].position - temp);
+        Vec3 n4 = Vec4::Cross(earthVertex[c].position - temp, earthVertex[d].position - temp);
+        Vec3 n5 = Vec4::Cross(earthVertex[d].position - temp, earthVertex[b].position - temp);
+        n1.NormalizeToUnit();
+        n2.NormalizeToUnit();
+        n3.NormalizeToUnit();
+        n4.NormalizeToUnit();
+        n5.NormalizeToUnit();
+
+        int d1 =Vec3::Dot(n1, norm);
+        int d2 =Vec3::Dot(n2, norm);
+        int d3 =Vec3::Dot(n3, norm);
+        int d4 = Vec3::Dot(n4, norm);
+        int d5 = Vec3::Dot(n5, norm);
+  
+        if ((d1>=0 && d2>=0 && d3>=0) || (d1<=0 && d2<=0 && d3<=0))
+          check = true;
+        if ((d2>=0 && d4>=0 && d5>=0) || (d2<=0 && d4<=0 && d5<=0))
+          check = true;
+        //else
+          //std::cout<<"False";
+      }
+    }
+  }
+
+
 
   //calculating intensity at the vertices
-  m_v1.color = light.CalculateLightIntensity(m_v1, cam);
-  m_v2.color = light.CalculateLightIntensity(m_v2, cam);
-  m_v3.color = light.CalculateLightIntensity(m_v3, cam);
+  if(!check)
+  {
+    m_v1.color = light.CalculateLightIntensity(m_v1, cam);
+    m_v2.color = light.CalculateLightIntensity(m_v2, cam);
+    m_v3.color = light.CalculateLightIntensity(m_v3, cam);
+  }
   
-  Vec3 norm = SurNormal(m_v1.position, m_v2.position, m_v3.position); 
+  Vec3 norm = Vec4::SurNorm(m_v1.position, m_v2.position, m_v3.position); 
   consA = norm.x;
   consB = norm.y;
   consC = norm.z;
@@ -348,7 +338,7 @@ void Rasterize::FillTriangle(Vertex p1, Vertex p2, Vertex p3,
       if(p.y < midY)
       {
         Xstart = Uinterpolation(p.y, m_v1.position.y, m_v2.position.y, m_v1.position.x, m_v2.position.x);
-        Xend = Uinterpolation(p.y, m_v1.position.y, m_v3.position.y, m_v1.position.x, m_v3.position.x);//IntersectX(p.y, p_p[0], p_p[2]);
+        Xend = Uinterpolation(p.y, m_v1.position.y, m_v3.position.y, m_v1.position.x, m_v3.position.x);
         ustart = Uinterpolation(Xstart, m_v1.position.x, m_v2.position.x, m_v1.uvc.x, m_v2.uvc.x);
         uend = Uinterpolation(Xend, m_v1.position.x, m_v3.position.x, m_v1.uvc.x, m_v3.uvc.x); 
         Istart = Iinterpolation(p.y, m_v1.position.y, m_v2.position.y, int1, int2);
@@ -358,7 +348,7 @@ void Rasterize::FillTriangle(Vertex p1, Vertex p2, Vertex p3,
       else
       {
         Xstart = Uinterpolation(p.y, m_v2.position.y, m_v3.position.y, m_v2.position.x, m_v3.position.x);
-        Xend = Uinterpolation(p.y, m_v1.position.y, m_v3.position.y, m_v1.position.x, m_v3.position.x);//IntersectX(p.y, p_p[0], p_p[2]);
+        Xend = Uinterpolation(p.y, m_v1.position.y, m_v3.position.y, m_v1.position.x, m_v3.position.x);
         ustart = Uinterpolation(Xstart, m_v2.position.x, m_v3.position.x, m_v2.uvc.x, m_v3.uvc.x);
         uend = Uinterpolation(Xend, m_v1.position.x, m_v3.position.x, m_v1.uvc.x, m_v3.uvc.x); 
         Istart = Iinterpolation(p.y, m_v2.position.y, m_v3.position.y, int2, int3);
@@ -380,9 +370,9 @@ void Rasterize::FillTriangle(Vertex p1, Vertex p2, Vertex p3,
         m_color = texObj.Sample(u2sam, v2sam);
         ColorRGB cur_color = GetColor(cur_int, m_color);
         
-        if (z < zBuffer[int(p.x+WIDTH/2) + int(p.y+HEIGHT/2)*WIDTH])
+        if (z < zBuffer[int(p.x+SCREEN_WIDTH/2) + int(p.y+SCREEN_HEIGHT/2)*SCREEN_WIDTH])
         {
-          zBuffer[int(p.x+WIDTH/2) + int(p.y+HEIGHT/2)*WIDTH] = z;
+          zBuffer[int(p.x+SCREEN_WIDTH/2) + int(p.y+SCREEN_HEIGHT/2)*SCREEN_WIDTH] = z;
           setPixel(m_renderer, p.x , p.y, cur_color);
         }
       }
@@ -404,7 +394,7 @@ void Rasterize::FillTriangle(Vertex p1, Vertex p2, Vertex p3,
   m_v2.color = light.CalculateLightIntensity(m_v2, cam);
   m_v3.color = light.CalculateLightIntensity(m_v3, cam);
   
-  Vec3 norm = SurNormal(m_v1.position, m_v2.position, m_v3.position); 
+  Vec3 norm = Vec4::SurNorm(m_v1.position, m_v2.position, m_v3.position); 
   consA = norm.x;
   consB = norm.y;
   consC = norm.z;
@@ -441,7 +431,7 @@ void Rasterize::FillTriangle(Vertex p1, Vertex p2, Vertex p3,
       if(p.y < midY)
       {
         Xstart = Uinterpolation(p.y, m_v1.position.y, m_v2.position.y, m_v1.position.x, m_v2.position.x);
-        Xend = Uinterpolation(p.y, m_v1.position.y, m_v3.position.y, m_v1.position.x, m_v3.position.x);//IntersectX(p.y, p_p[0], p_p[2]);
+        Xend = Uinterpolation(p.y, m_v1.position.y, m_v3.position.y, m_v1.position.x, m_v3.position.x);
         ustart = Uinterpolation(Xstart, m_v1.position.x, m_v2.position.x, m_v1.uvc.x, m_v2.uvc.x);
         uend = Uinterpolation(Xend, m_v1.position.x, m_v3.position.x, m_v1.uvc.x, m_v3.uvc.x); 
         Istart = Iinterpolation(p.y, m_v1.position.y, m_v2.position.y, int1, int2);
@@ -451,7 +441,7 @@ void Rasterize::FillTriangle(Vertex p1, Vertex p2, Vertex p3,
       else
       {
         Xstart = Uinterpolation(p.y, m_v2.position.y, m_v3.position.y, m_v2.position.x, m_v3.position.x);
-        Xend = Uinterpolation(p.y, m_v1.position.y, m_v3.position.y, m_v1.position.x, m_v3.position.x);//IntersectX(p.y, p_p[0], p_p[2]);
+        Xend = Uinterpolation(p.y, m_v1.position.y, m_v3.position.y, m_v1.position.x, m_v3.position.x);
         ustart = Uinterpolation(Xstart, m_v2.position.x, m_v3.position.x, m_v2.uvc.x, m_v3.uvc.x);
         uend = Uinterpolation(Xend, m_v1.position.x, m_v3.position.x, m_v1.uvc.x, m_v3.uvc.x); 
         Istart = Iinterpolation(p.y, m_v2.position.y, m_v3.position.y, int2, int3);
@@ -473,9 +463,9 @@ void Rasterize::FillTriangle(Vertex p1, Vertex p2, Vertex p3,
         m_color = color;
         ColorRGB cur_color = GetColor(cur_int, m_color);
         
-        if (z < zBuffer[int(p.x+WIDTH/2) + int(p.y+HEIGHT/2)*WIDTH])
+        if (z < zBuffer[int(p.x+SCREEN_WIDTH/2) + int(p.y+SCREEN_HEIGHT/2)*SCREEN_WIDTH])
         {
-          zBuffer[int(p.x+WIDTH/2) + int(p.y+HEIGHT/2)*WIDTH] = z;
+          zBuffer[int(p.x+SCREEN_WIDTH/2) + int(p.y+SCREEN_HEIGHT/2)*SCREEN_WIDTH] = z;
           setPixel(m_renderer, p.x , p.y, cur_color);
         }
       }

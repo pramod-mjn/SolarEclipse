@@ -4,8 +4,10 @@
 #include <SDL2/SDL.h>
 #include <Vector.h>
 
-const int WIDTH = 1024;
-const int HEIGHT = 768;
+extern const int SCREEN_WIDTH;
+extern const int SCREEN_HEIGHT;
+// const int WIDTH = 1024;
+// const int HEIGHT = 768;
 
 // class for color
 struct ColorRGB
@@ -21,8 +23,8 @@ struct ColorRGB
 // plotting pixel
 inline void setPixel(SDL_Renderer *renderer, int x, int y, ColorRGB color)
 {
-        x +=WIDTH/2; y +=HEIGHT/2;
-        if (x <0  || x >= WIDTH || y < 0 || y >= HEIGHT) return;
+        x +=SCREEN_WIDTH/2; y +=SCREEN_HEIGHT/2;
+        if (x <0  || x >= SCREEN_WIDTH || y < 0 || y >= SCREEN_HEIGHT) return;
         SDL_Rect pixel = {x, y, 1, 1};
         SDL_SetRenderDrawColor(renderer, color.B, color.G, color.R, 0xFF);
         SDL_RenderFillRect(renderer, &pixel);
@@ -32,14 +34,14 @@ inline void setPixel(SDL_Renderer *renderer, int x, int y, uint32_t color)
     uint8_t r = (color >> 16) & 0x0000ff;
     uint8_t g = (color >> 8)  & 0x0000ff;
     uint8_t b = (color)       & 0x0000ff;
-    SDL_Rect pixel = {x+WIDTH/2, y+HEIGHT/2, 1, 1};
+    SDL_Rect pixel = {x+SCREEN_WIDTH/2, y+SCREEN_HEIGHT/2, 1, 1};
     SDL_SetRenderDrawColor(renderer, r, g, b, 0);
     SDL_RenderFillRect(renderer, &pixel);
 }
 
 inline void setPixel(SDL_Renderer * renderer, Point2D p, ColorRGB color)
 {
-	SDL_Rect pixel = {p.x+WIDTH/2, p.y+HEIGHT/2, 1,1};
+	SDL_Rect pixel = {p.x+SCREEN_WIDTH/2, p.y+SCREEN_HEIGHT/2, 1,1};
     SDL_SetRenderDrawColor(renderer, color.R, color.G, color.B, 0xFF);
     SDL_RenderFillRect(renderer, &pixel);
 }

@@ -230,17 +230,23 @@ int main()
 	Vec3 light(-1,0,0);
 	Vec3 point(100,8,2);
 
-	tri[0] = Vec3(200,0,0); tri[1] = Vec3(100,0,10); tri[2] = Vec3(200,10,0);
+	tri[0] = Vec3(20,0,10); tri[1] = Vec3(20,0,0); tri[2] = Vec3(20,10,0);
 
 	float A,B,C,D;
 
-	Vec3 norm = SurNormal(tri[0], tri[1], tri[2]);
+	//Vec3 norm = SurNormal(tri[0], tri[1], tri[2]);
+	Vec3 ab = tri[1] - tri[0];
+	Vec3 ac = tri[2] - tri[0];
+	std::cout<<ab<<"    "<<ac<<"\n";
+	Vec3 norm =  Vec3::Cross(ac, ab);
 	A = norm.x;
 	B= norm.y;
 	C= norm.z;
 	D = -(A * tri[0].x + B * tri[0].y + C * tri[0].z);
 
 	float u = - ( A*point.x + B*point.y + C*point.z + D)/(A*(light.x) + B*light.y + C*light.z);
+	norm.NormalizeToUnit();
+	std::cout<<"norm = "<<norm<<"\n";
 	std::cout<<"u = "<<u<<"\n";
 
 	Vec3 temp  = Vec3(point.x + u*(light.x), point.y + u*light.y, point.z + u*light.z);

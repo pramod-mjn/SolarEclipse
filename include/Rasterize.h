@@ -17,30 +17,8 @@ class Rasterize
 public:
 	Rasterize(SDL_Renderer *renderer, Camera &camera);
 	Vec3 Projection(const Vec4& a);
-	void SortY(Vec3&, Vec3&, Vec3&);
-	void SortY(Vec3& a, Vec3& b, Vec3& c, Vec2& uv1, Vec2& uv2, Vec2& uv3);
-	Vec3 SurNormal(Vec4, Vec4, Vec4);
-	float IntersectX(int y, Vec3 a, Vec3 b);
-	float IntersectX(int y, Vec4 a, Vec4 b)
-	{
-		return (a.x*1.0f + (b.x - a.x)*(y - a.y)/(b.y - a.y)*1.0f);
-	}
-	int orient2d(const Vec3& a, const Vec3& b, const Vec3& c);
-	int Max3(int a, int b, int c);
-	int Min3(int a, int b, int c);
-
-	void Horizon(float y, float preX, float postX, float *zBuffer);
-	void Horizon(float y, float v2sam, float preX, float postX, float u1, float u2, 
-  Texture &texEarth, float *zBuffer);
-
 	void DrawTriangle(const Vec4& p1, const Vec4& p2, const Vec4& p3, ColorRGB color);
 	
-
-	void FillTriangle(Vec4 p1, Vec4 p2, Vec4 p3, ColorRGB color, float *zBuffer);
-	void FillTriangle(Vec4 p1, Vec4 p2, Vec4 p3, Vec2 uv1, Vec2 uv2, Vec2 uv3,
-       Texture &texEarth, float *zBuffer);
-	void FillTriangle(Vec4 p1, Vec4 p2, Vec4 p3, Vec2 uv1, Vec2 uv2, Vec2 uv3, Vec3 n1, Vec3 n2, Vec3 n3,
-       Texture &texEarth, float *zBuffer);
 	void FillTriangle(Vertex p1, Vertex p2, Vertex p3, Texture &texObj, float *zBuffer);
 	void FillTriangle(Vertex p1, Vertex p2, Vertex p3, Texture &texObj, float *zBuffer, int moon);
 	void FillTriangle(Vertex p1, Vertex p2, Vertex p3, ColorRGB color, float *zBuffer);
@@ -106,27 +84,7 @@ public:
 		return a; 			
 	}
 
-	void SortY(Vec3& a, Vec3& b, Vec3& c, Vec2& uv1, Vec2& uv2, Vec2& uv3, Vec3& n1, Vec3& n2, Vec3& n3)
-	{
-	  if(a.y > b.y){
-	    Vec3::swapp(a, b);
-	    std::swap(uv1.x, uv2.x);
-	    std::swap(uv1.y, uv2.y);
-	    Vec3::swapp(n1,n2);
-	  }
-	  if(b.y > c.y){
-	    Vec3::swapp(b, c);
-	    std::swap(uv2.x, uv3.x);
-	    std::swap(uv2.y, uv3.y);
-	    Vec3::swapp(n2,n3);
-	  }
-	  if(a.y > b.y){
-	    Vec3::swapp(a, b);
-	    std::swap(uv1.x, uv2.x);
-	    std::swap(uv1.y, uv2.y);
-	    Vec3::swapp(n1,n2);
-	  }
-	}
+	
 
 private:
 	SDL_Renderer *m_renderer;
