@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <cmath>
 
 class Vec2
 {
@@ -28,6 +29,94 @@ public:
 	// use 3 elements to init
 	Vec3(float xx, float yy, float zz) : x(xx), y(yy), z(zz) {}
 
+	Vec3 operator + (const Vec3 & other) const
+	{
+		return Vec3(x+other.x, y+other.y, z+other.z);
+	}
+
+	Vec3 operator - (const Vec3 & other)
+	{
+		return Vec3(x-other.x, y-other.y, z-other.z);
+	}
+
+	void operator-=(const Vec3 & other)
+	{
+		x = x-other.x; y=y-other.y; z=z-other.z;
+	}
+
+	void operator+=(const Vec3 & other)
+	{
+		x = x+other.x; y=y+other.y; z=z+other.z;
+	}
+
+	Vec3 operator * (float k) const 
+	{
+		return Vec3(k*x, k*y, k*z);
+	}
+
+	Vec3 operator / (float k) const
+	{
+		return Vec3(x/k, y/k, z/k);
+	}
+	bool operator ==(const Vec3 & other)
+	{
+		if(x == other.x && y == other.y && z == other.z)
+			return true;
+		else
+			return false;
+	}
+
+	float  operator[] (size_t i) const
+	{
+		if(i>=3)
+		{
+			throw "index access error...";
+		}
+		return (&x)[i];
+	}
+
+	float & operator[] (size_t i)
+	{
+		if(i>=3)
+		{
+			throw "index access error...";
+		}
+		return (&x)[i];
+	}
+
+	inline float Length() const
+    {
+        return sqrtf(x*x+y*y+z*z);
+    }
+
+    void NormalizeToUnit(void)
+    {
+    	float invlen = 1/Length();
+    	x *= invlen;
+    	y *= invlen;
+    	z *= invlen;
+    }
+
+    static Vec3 NormalizeToUnit(const Vec3 &  v)
+    {
+    	float invlen = 1/v.Length();
+    	return Vec3(v.x*invlen, v.y*invlen, v.z*invlen);
+    }
+
+	static float Dot(const Vec3& v1, const Vec3& v2)
+	{
+		return v1.x*v2.x + v1.y*v2.y + v1.z*v2.z;
+	}
+
+	static Vec3 Cross(const Vec3& a, const Vec3& b)
+	{
+		return Vec3(
+				a.y * b.z - b.y * a.z,
+				-(a.x * b .z - a.z * b.x),
+				a.x * b.y - b.x * a.y
+				);
+	}
+	
 	static void swapp(Vec3& a, Vec3& b)
 	{
 		std::swap(a.x, b.x);
@@ -69,6 +158,12 @@ struct Vertex{
 	Vertex(Vec4 a, Vec2 b, Vec3 n): position(a), uvc(b), normal(n)
 	{}
 };
+Vec3 SurNormal(Vec3 a, Vec3 b, Vec3 c)
+{
+	Vec3 ab = b - a;
+	Vec3 ac = c - a;
+	return Vec3::Cross(ac, ab);
+}
 
 void SortVertex(Vertex& v1, Vertex& v2, Vertex& v3)
 {
@@ -128,30 +223,49 @@ inline std::ostream& operator << (std::ostream &os, const Vec4 &v4)
 	return os;
 }
 
+
 int main()
 {
-	std::vector<Vertex> vertices;
-	Vertex a, b, c;
-	a.position = Vec4(1,2,3,4);
-	a.normal = Vec3(1,1,1);
-	a.uvc = Vec2(1,1);
+	Vec3 tri[3];
+	Vec3 light(-1,0,0);
+	Vec3 point(100,8,2);
 
-	b.position = Vec4(1,4,4,4);
-	b.normal = Vec3(0,0,0);
-	b.uvc = Vec2(0,0);
+	tri[0] = Vec3(200,0,0); tri[1] = Vec3(100,0,10); tri[2] = Vec3(200,10,0);
 
-	c.position = Vec4(1,1,1,1);
-	c.normal = Vec3(0,0,0);
-	c.uvc = Vec2(0,0);
+	float A,B,C,D;
 
-	vertices.push_back(a);
-	vertices.push_back(b);
-	vertices.push_back(c);
+	Vec3 norm = SurNormal(tri[0], tri[1], tri[2]);
+	A = norm.x;
+	B= norm.y;
+	C= norm.z;
+	D = -(A * tri[0].x + B * tri[0].y + C * tri[0].z);
 
-	SortVertex(vertices[0], vertices[1], vertices[2]);
-	std::cout<<vertices[0].position;
-	std::cout<<vertices[1].position;
-	std::cout<<vertices[2].position;
+	float u = - ( A*point.x + B*point.y + C*point.z + D)/(A*(light.x) + B*light.y + C*light.z);
+	std::cout<<"u = "<<u<<"\n";
+
+	Vec3 temp  = Vec3(point.x + u*(light.x), point.y + u*light.y, point.z + u*light.z);
+
+	Vec3 n1 = Vec3::Cross(tri[0] - temp, tri[1] - temp);
+	Vec3 n2 = Vec3::Cross(tri[1] - temp, tri[2] -temp);
+	Vec3 n3 = Vec3::Cross(tri[2] - temp, tri[0] - temp);
+	n1.NormalizeToUnit();
+	n2.NormalizeToUnit();
+	n3.NormalizeToUnit();
+	int a =Vec3::Dot(n1, norm);
+	int b =Vec3::Dot(n2, norm);
+	int c =Vec3::Dot(n3, norm);
+	
+	std::cout<<temp<<"\n";
+	std::cout<<a<<" "<<b<<" "<<c <<"\n";
+	if ((a>=0 && b>=0 && c>=0) || (a<=0 && b<=0 && c<=0))
+		std::cout<<"True";
+	else
+		std::cout<<"False";
+
+		return 0;
+
+
+
 
 
 }

@@ -8,6 +8,8 @@
 #include <Camera.h>
 #include <cmath>
 #include <Light.h>
+//#include <Sphere.h>
+//#include <Global.h>
 
 
 class Rasterize
@@ -32,8 +34,6 @@ public:
   Texture &texEarth, float *zBuffer);
 
 	void DrawTriangle(const Vec4& p1, const Vec4& p2, const Vec4& p3, ColorRGB color);
-	void DrawSphere(Vec4 center, int radius, ColorRGB color);
-	void FillSphere(Vec4 center, int radius, Texture& tex, float *zBUffer);
 	
 
 	void FillTriangle(Vec4 p1, Vec4 p2, Vec4 p3, ColorRGB color, float *zBuffer);
@@ -42,6 +42,8 @@ public:
 	void FillTriangle(Vec4 p1, Vec4 p2, Vec4 p3, Vec2 uv1, Vec2 uv2, Vec2 uv3, Vec3 n1, Vec3 n2, Vec3 n3,
        Texture &texEarth, float *zBuffer);
 	void FillTriangle(Vertex p1, Vertex p2, Vertex p3, Texture &texObj, float *zBuffer);
+	void FillTriangle(Vertex p1, Vertex p2, Vertex p3, Texture &texObj, float *zBuffer, int moon);
+	void FillTriangle(Vertex p1, Vertex p2, Vertex p3, ColorRGB color, float *zBuffer);
 
 	float Vinterpolation(float y, float y1, float y2, float v1, float v2)
 	{
@@ -80,16 +82,19 @@ public:
 		    Vec4::swapp(v1.position, v2.position);
 		    Vec3::swapp(v1.normal, v2.normal);
 		    Vec2::swapp(v1.uvc, v2.uvc);
+		    Vec3::swapp(v1.color, v2.color);
 	  	}
 	  	if(v2.position.y > v3.position.y){
 	    	Vec4::swapp(v2.position, v3.position);
 		    Vec3::swapp(v2.normal, v3.normal);
 		    Vec2::swapp(v2.uvc, v3.uvc);
+		    Vec3::swapp(v2.color, v3.color);
 	  	}
 	  	if(v1.position.y > v2.position.y){
 	    	Vec4::swapp(v1.position, v2.position);
 		    Vec3::swapp(v1.normal, v2.normal);
 		    Vec2::swapp(v1.uvc, v2.uvc);
+		    Vec3::swapp(v1.color, v2.color);
   		}
 	}
 	Vertex Project(Vertex a)
@@ -127,8 +132,6 @@ private:
 	SDL_Renderer *m_renderer;
 	ColorRGB m_color;
 	Camera cam;
-	//float zprp;
-	//float zview;
 	Vec4 m_p[3];
 	Vec3 p_p[3];
 	Vec4 m_p1, m_p2, m_p3;
@@ -136,5 +139,6 @@ private:
 	float consA, consB, consC, consD;
 	Vertex m_v1, m_v2, m_v3;
 	Vec3 int1, int2, int3;
+	
 };
 

@@ -297,13 +297,14 @@ struct Vertex{
 	Vec4 position;
 	Vec2 uvc;
 	Vec3 normal;
-	int count;
+	Vec3 color;
+	int phi_count, theta_count;
 	Vertex(){}
-	Vertex(Vec4 a, Vec2 b, int c=0): position(a), uvc(b), count(c)
+	Vertex(Vec4 a, Vec2 b, Vec3 c): position(a), uvc(b), color(c)
 	{
 		normal = Vec3(0,0,0);
 	}
-	Vertex(Vec4 a, Vec2 b, Vec3 n, int c=0): position(a), uvc(b), normal(n), count(c)
+	Vertex(Vec4 a, Vec2 b, Vec3 n, Vec3 c): position(a), uvc(b), normal(n), color(c)
 	{}
 };
 struct Surface{

@@ -16,36 +16,32 @@ using namespace std;
 const int SCREEN_WIDTH = 1024;
 const int SCREEN_HEIGHT = 768;
 const float def_Buffer = 100000;
+Light light(1,1,1,1,1,1);
 
-//Material material(0.5,0.5,0.5,200);
-
-
+std::vector<Vertex> moonVertex;
 
 
 int main()
 {
     Camera camera;
+    float lightAngle = 0;
     Texture texEarth, texMoon;
     texEarth.LoadFile("earthTexture.bmp");
     texMoon.LoadFile("moonTexture.bmp");
     
     Vec3 earthCenter = Vec3(0,0,500);
     float earthRadius = 175;
-    Sphere earth(earthCenter, earthRadius);
+    Sphere earth(earthCenter, earthRadius, 25);
     Vec4 view_earthCenter;
     float earthAngle = 0;
 
     Vec3 moonCenter = Vec3(450,0,500);
-    float moonRadius = 80;
-    Sphere moon(moonCenter, moonRadius);
+    float moonRadius = 50;
+    Sphere moon(moonCenter, moonRadius, 10);
     float moonAngle = 0;
-
-    Vec3 sunCenter = Vec3(-900,0,500);
-    float sunRadius = 300;
-    Sphere sun(sunCenter, sunRadius);
-    Vec4 view_sunCenter;
-
-
+    moonVertex.resize(moon.vertices.size());
+    moonVertex[0].phi_count = moon.vertices[0].phi_count;
+    moonVertex[0].theta_count = moon.vertices[0].theta_count;
     
 	float zBuffer[(SCREEN_WIDTH+1)*(SCREEN_HEIGHT+1)];
     for(int i = 0; i<(SCREEN_WIDTH+1)*(SCREEN_HEIGHT+1);i++)
@@ -71,18 +67,6 @@ int main()
         return -1;
     }
     SDL_Event event;
-
-    std::vector<Vec3> triangle = {Vec3(-50, -50, -50), Vec3(50, -50, -50), Vec3(-50, 50, -50), Vec3(50, 50, -50),
-                                    Vec3(-50, -50, 50), Vec3(50, -50, 50), Vec3(-50, 50, 50), Vec3(50, 50,  50)};
-    Vec3 grid[] = {Vec3(-100, 50, 300), Vec3(100, 50, 300), Vec3(-100, 50, -100), Vec3(100, 50, -100)};
-    Vec4 view_grid[4];
-    
-
-    
-    
-
-       
-    std::vector<Vec4> view_tran(triangle.size());
     bool quit = false;
    
     
@@ -94,53 +78,64 @@ int main()
 
        
     while(!quit)
-    {
-        
-        moonAngle = 0.01;
-        //vAxis.Draw();
-        //hAxis.Draw();
-
-        
-       // viewTransform = Camera::ViewPort(camPos, Vec3(0,0,0), camAngle);
+    {        
         rotation = Transform::RotateZ(camera.gamma) * Transform::RotateX(camera.theta) * Transform::RotateY(camera.phi);
-        //earthRotation = Transform::RotateY(earthAngle, earthCenter);
-        view_sunCenter = Vec4(sunCenter, 1);
         view_earthCenter = Vec4(earthCenter, 1);
 
-        for(int i=0; i<triangle.size(); i++)
-        {
-        	view_tran[i] = rotation * Vec4(triangle[i], 1);
-        }
-        for(int i=0; i<4; i++)
-        {
-            view_grid[i] = rotation * Vec4(grid[i], 1);
-            
-        }
+        // Changing light earth and moon position into viewing coordinate
+        Vec4 lightDir = Vec4(light.direction, 0);
+        lightDir = rotation * lightDir;
+        light.direction = Vec3(lightDir.x, lightDir.y, lightDir.z);
+    
         for(int i=0; i<earth.vertices.size(); i++)
         {
             Vec4 v = earth.vertices[i].position;
             Vec4 nearth = Vec4(earth.vertices[i].normal, 0);
-            //Vec4 v = Vec4(vec.x, vecc.y, vec.z, 1);
-            v = Transform::RotateY(earthAngle, view_earthCenter) * v;
-            nearth = Transform::RotateY(earthAngle, view_earthCenter) * nearth;
-            earth.vertices[i].position = v;//Vec3(v.x, v.y, v.z);
+            v = rotation * v;
+            nearth = rotation * nearth;
+            earth.vertices[i].position = v;
             earth.vertices[i].normal = Vec3(nearth.x, nearth.y, nearth.z);
         }
         for(int i=0; i<moon.vertices.size(); i++)
         {
             Vec4 v = moon.vertices[i].position;
             Vec4 nmoon = Vec4(moon.vertices[i].normal,0);
-            v = Transform::RotateZ(moonAngle, view_earthCenter) * v;
-            nmoon = Transform::RotateZ(moonAngle, view_earthCenter) * nmoon;
-            moon.vertices[i].position = v;//Vec3(v.x, v.y, v.z);
+            v = rotation * v;
+            nmoon = rotation * nmoon;
+            moonVertex[i].position = moon.vertices[i].position = v;
             moon.vertices[i].normal = Vec3(nmoon.x, nmoon.y, nmoon.z);
         }
 
-        view_sunCenter = Vec4(sunCenter, 1);
-        view_earthCenter = earthRotation * Vec4(earthCenter, 1);
-
+        //Rotation of Light source
+        lightDir = Vec4(light.direction, 0);
+        lightDir = Transform::RotateY(lightAngle) * lightDir;
+        light.direction = Vec3(lightDir.x, lightDir.y, lightDir.z);
+        lightAngle =0;
         
+        //Rotation of earth
+        for(int i=0; i<earth.vertices.size(); i++)
+        {
+            Vec4 v = earth.vertices[i].position;
+            Vec4 nearth = Vec4(earth.vertices[i].normal, 0);
+            v = Transform::RotateY(earthAngle, view_earthCenter) * v;
+            nearth = Transform::RotateY(earthAngle, view_earthCenter) * nearth;
+            earth.vertices[i].position = v;
+            earth.vertices[i].normal = Vec3(nearth.x, nearth.y, nearth.z);
+        }
+        //Revolution of moon
+        for(int i=0; i<moon.vertices.size(); i++)
+        {
+            Vec4 v = moon.vertices[i].position;
+            Vec4 nmoon = Vec4(moon.vertices[i].normal,0);
+            v = Transform::RotateZ(moonAngle, view_earthCenter) * v;
+            nmoon = Transform::RotateZ(moonAngle, view_earthCenter) * nmoon;
+            moonVertex[i].position = moon.vertices[i].position = v;
+            moon.vertices[i].normal = Vec3(nmoon.x, nmoon.y, nmoon.z);
+        }
+
+        lightAngle =0;
         earthAngle = 0;
+        moonAngle = 0;
         SDL_WaitEvent(&event);
 
         switch (event.type)
@@ -151,14 +146,16 @@ int main()
 
                     };
         if (event.type == SDL_KEYDOWN) {
-            if (event.key.keysym.sym == SDLK_a) camera.phi+=0.1;
-            if (event.key.keysym.sym == SDLK_d) camera.phi-=0.1;
-            if (event.key.keysym.sym == SDLK_q) camera.theta+=0.1;
-            if (event.key.keysym.sym == SDLK_e) camera.theta-=0.1;
-            if (event.key.keysym.sym == SDLK_v) camera.gamma+=0.1;
-            if (event.key.keysym.sym == SDLK_b) camera.gamma-=0.1;
-            if (event.key.keysym.sym == SDLK_m) earthAngle = 0.01;
-            if (event.key.keysym.sym == SDLK_n) earthAngle = -0.01;
+            if (event.key.keysym.sym == SDLK_a) camera.phi =0.1;
+            if (event.key.keysym.sym == SDLK_d) camera.phi =-0.1;
+            if (event.key.keysym.sym == SDLK_q) camera.theta =0.1;
+            if (event.key.keysym.sym == SDLK_e) camera.theta =-0.1;
+            if (event.key.keysym.sym == SDLK_v) camera.gamma =0.1;
+            if (event.key.keysym.sym == SDLK_b) camera.gamma =-0.1;
+            if (event.key.keysym.sym == SDLK_m) { earthAngle = 0.01; moonAngle = 0.01; }
+            if (event.key.keysym.sym == SDLK_n) { earthAngle = -0.01; moonAngle = -0.01; }
+            if (event.key.keysym.sym == SDLK_j) lightAngle = 0.01;
+            if (event.key.keysym.sym == SDLK_k) lightAngle = -0.01;
             
             if (event.key.keysym.sym == SDLK_z) {
                 camera.zprp += 5;
@@ -182,45 +179,12 @@ int main()
         }
 
         
-        //Rasterize(renderer, view_tran[0], view_tran[1], view_tran[2], zprp, zview, red).DrawTriangle();
-        //Rasterize(renderer, view_tran[1], view_tran[2], view_tran[3], zprp, zview, red).DrawTriangle();
         
-        // Rasterize(renderer, camera).FillTriangle(view_grid[0], view_grid[1], view_grid[2], grey, zBuffer);
-        // Rasterize(renderer, camera).FillTriangle(view_grid[1], view_grid[2], view_grid[3], grey, zBuffer);
-        
-        
-        // Rasterize(renderer, camera).FillTriangle(view_tran[0], view_tran[1], view_tran[2], red, zBuffer);
-        // Rasterize(renderer, camera).FillTriangle(view_tran[1], view_tran[2], view_tran[3], red, zBuffer);
-        // Rasterize(renderer, camera).FillTriangle(view_tran[4], view_tran[5], view_tran[6], black, zBuffer);
-        // Rasterize(renderer, camera).FillTriangle(view_tran[5], view_tran[6], view_tran[7], black, zBuffer);
-       
-        // Rasterize(renderer, camera).FillTriangle(view_tran[0], view_tran[2], view_tran[4], green, zBuffer);
-        // Rasterize(renderer, camera).FillTriangle(view_tran[2], view_tran[4], view_tran[6], green, zBuffer);
-        // Rasterize(renderer, camera).FillTriangle(view_tran[1], view_tran[3], view_tran[5], green, zBuffer);
-        // Rasterize(renderer, camera).FillTriangle(view_tran[3], view_tran[5], view_tran[7], green, zBuffer);
-        
-        // Rasterize(renderer, camera).FillTriangle(view_tran[0], view_tran[1], view_tran[5], blue, zBuffer);
-        // Rasterize(renderer, camera).FillTriangle(view_tran[0], view_tran[5], view_tran[4], blue, zBuffer);
-        // Rasterize(renderer, camera).FillTriangle(view_tran[2], view_tran[3], view_tran[7], blue, zBuffer);
-        // Rasterize(renderer, camera).FillTriangle(view_tran[2], view_tran[6], view_tran[7], blue, zBuffer);
-        
-
-        // Rasterize(renderer, camera).FillTriangle(view_tran[4], view_tran[5], view_tran[6], black, zBuffer);
-        // Rasterize(renderer, camera).FillTriangle(view_tran[5], view_tran[6], view_tran[7], black, zBuffer);
-        
-        // Rasterize(renderer, camera).FillSphere(view_sunCenter, sunRadius, texEarth, zBuffer);
-        // Rasterize(renderer, camera).DrawSphere(view_earthCenter, earthRadius, blue);
-        //earth.Fill(renderer, camera, red, zBuffer);
+        // earth.Fill(renderer, camera, red, zBuffer);
         //sun.Fill(renderer, camera, yellow, zBuffer);
-        earth.Map(renderer, camera, texEarth, zBuffer);
-        moon.Map(renderer, camera, texMoon, zBuffer);
+         earth.Map(renderer, camera, texEarth, zBuffer);
+         moon.Map(renderer, camera, texMoon, zBuffer);
 
-
-
-        
-        //vAxis.Draw();
-        //hAxis.Draw();
-       
         SDL_RenderPresent(renderer);
     }
     SDL_DestroyWindow(window);
